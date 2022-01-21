@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="dv-project.css">
+	<script src="https://d3js.org/d3.v6.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+	<meta name="author" content="Guerin Clement">
+	<meta name="author" content="Garnier Raphael">
+	<meta name="description" content="Jan 2022, Data Visulization project. Theme: How gov. policies impact Covid19 pandemic">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+	<div class="row"></div><br></div>
+	<div class="row">
+		<div class="col s1">
+		</div>
+		<div class="col s10">
+			<div class="card-panel grey lighten-5 z-depth-1">
+				<h1>The impact of government policies on Covid19 pandemic</h1>
+				<h5>author: Garnier Raphael, Guerin Clement</h5>
+				<h6>date: January 14th 2022</h6>
+				<p class="text-justify"></br>This work has been made for our project of data visualization. Its goal is to show the impact of the various policies government implement during the Covid19 pandemic on the later one. Please note that our data stop at January 14th 2022.</br>You can select one European country to highlight. By default France is selected. You can also select a government policy. By default face covering is selected. Finally you can select the factor you want to display. It can be the number of daily new cases, deaths, the population in public parks, at work, in public transport or in grocery shops. By default, daily new cases is selected.</p>
+			</div>
+
+			<!-- selectors for graph -->
+			<div class="row">
+				<div class="input-field col s4">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5 class="col s12">Country</h5>
+						<select id="selectCountry" class="browser-default" onchange="selectOnChange('selectCountry')">
+						</select>
+					</div>
+				</div>
+				<div class="input-field col s4">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5 class="col s12">Government policy</h5>
+						<select id="selectPolicy" class="browser-default" onchange="selectOnChange('selectPolicy')">
+							<option value="1">Facemask wearing</option>
+							<option value="2">School opening</option>
+							<option value="3">Public event cancelation</option>
+						</select>
+					</div>
+				</div>
+				<div class="input-field col s4">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5 class="col s12">Covid factor</h5>
+						<select id="selectFactor" class="browser-default" onchange="selectOnChange('selectFactor')">
+							<option value="1">Daily new cases</option>
+							<option value="2">Daily deaths</option>
+							<option value="3">Daily number of people in parks</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="divider"></div></br></br>
+
+			<!-- first graph -->
+<!--			<div class="row">
+				<div class="col s12">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5>First Graph</h5>
+						<img class="responsive-img" src="preliminary-report/drawing1.png">
+					</div>
+				</div>
+				<div class="col s12">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<p class="text-justify">You can see here the date of the implementation of your selected policy during the pandemic. You can also see the number of daily death in European countries with highlight on your selected country. For every change on the selected policy in the selected country, you can see a mark on the graph. By hovering you can see the precise data related to the selected country. </p>
+					</div>
+				</div>
+			</div>
+			<div class="divider"></div></br>
+
+			<! -- second graph -->
+<!--			<div class="row">
+				<div class="col s8">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5>Second Graph</h5>
+						<img class="responsive-img" src="preliminary-report/drawing1-1.png">
+					</div>
+				</div>
+				<div class="col s4">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5>Legend and explainations</h5>
+						<p>this is some text ... dihf doihf doihf d oidhf so dfhod  doifhds s doifyys dfos dfidyf sodifys dof sodifys dofisdfso fosd gsodifgys dgopsd sdogisd gsdo gsd gsdo gsd gosd gs gsd og sdgoidyg sd gosdigys g sodfigysf godsf igf godigds fg dofigyd</p>
+					</div>
+				</div>
+			</div>
+			<div class="divider"></div></br>
+
+			<! -- third graph -->
+			<div class="row">
+				<div class="col s4">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5>Legend and explainations</h5>
+						<p>this is some text ... dihf doihf doihf d oidhf so dfhod  doifhds s doifyys dfos dfidyf sodifys dof sodifys dofisdfso fosd gsodifgys dgopsd sdogisd gsdo gsd gsdo gsd gosd gs gsd og sdgoidyg sd gosdigys g sodfigysf godsf igf godigds fg dofigyd</p>
+					</div>
+				</div>
+				<div class="col s8">
+					<div class="card-panel grey lighten-5 z-depth-1">
+						<h5>Third Graph</h5>
+						<!--<img class="responsive-img" src="preliminary-report/drawing1-2.png">-->
+						<div id="third-graph"></div>
+					</div>
+				</div>
+			</div>
+
+
+
+
+
+
+		</div>
+		<div class="col s1">
+		</div>
+	</div>
+
+
+	<script src="dv-project.js"></script>
+</body>
+</html>
