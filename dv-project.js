@@ -5,9 +5,13 @@ const height = 400;
 const widthReduced = width - margin.left - margin.right;
 const heightReduced = height - margin.top - margin.bottom;
 const countriesEurope = ['Albania', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria', 'Croatia', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Moldova', 'Montenegro', 'Netherlands', 'North Macedonia', 'Norway', 'Poland', 'Portugal', 'Romania', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'Switzerlandh', 'Ukraine', 'United Kingdom']
-var parameter = {country: 1, policy: 1, factor: 1};
+const governmentPolicies = ["testing_policy","vaccination_policy","facial_coverings","income_support","public_information_campaigns","cancel_public_events","close_public_transport","school_closures","stay_home_requirements"];
+const covidFactors = ["Daily new Covid cases", "Daily number of death", "Number of people in public spaces", "Number of people in public transport", "Number of people in work places", "Number of people in grocery stores", "Number of people in non essential stores"]
+var parameter = {country: 11, policy: 2, factor: 0};
 var DebugData;
-var DictData={};
+var DictData=[];
+var XScale;
+var YScale;
 
 // append the svg object to the body of the page
 const svg = d3.select("#third-graph")
@@ -19,34 +23,29 @@ const svg = d3.select("#third-graph")
 
 // load the first set of data when load page
 window.onload = function() {
-  initSelect(countriesEurope, "selectCountry");
-  //d3.csv('data/new_cases_per_million.csv').then(function (data) { console.log(data.columns); console.log(parseFloat(data[450]["France"])); });
+  initSelect(countriesEurope, "selectCountry", parameter["country"]);
+  initSelect(governmentPolicies, "selectPolicy", parameter["policy"]);
+  initSelect(covidFactors, "selectFactor", parameter["factor"]);
   initPage('data/new_cases_per_million.csv');
 };
-
+ 
 
 function initPage(src){
   for (i=0; i<countriesEurope.length; i++){
-    DictData[countriesEurope[i]] = [];
+    DictData[i] = [];
   }
-  DictData["date"] = [];
-  getData(src).then(
-    function(data) {
-    // Add X axis 
-    svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", `translate(0, ${height})`); 
-    // Add Y axis
-    svg.append("g")
-    .attr("class", "y axis");
-    // Add the line
-    svg.append("path")
-    .attr("class", "dataLine");
-    svg.append("circle")
-    .attr("class", "dot");
+  // Add X axis 
+  svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", `translate(0, ${height})`); 
+  // Add Y axis
+  svg.append("g")
+  .attr("class", "y axis");
+
+  getData(src).then(function(){
+    updateSelect();
+    updateGraph();
   });
-  updateSelect();
-  updateGraph(DictData);
 }
 
 // function that get the data and parse it
@@ -55,26 +54,31 @@ function getData(src){
     // When reading the csv, I must format variables:
     function(d){
       var temp;
+      date = new Date(d["date"]);
       for (var j = 0; j < countriesEurope.length; j++){
         temp = parseFloat(d[countriesEurope[j]]);
-        DictData[countriesEurope[j]].push(temp);
+        if (temp !== temp){
+          temp = 0;
+        }
+        DictData[j].push([date,temp]);
         temp=0;
       }
-      temp = new Date(d["date"]);
-      DictData['date'].push(temp);
+      //temp = new Date(d["date"]);
+      //DictData[countriesEurope.length].push(temp);
     }
   );  
 }
 
 // initialize the select elements with a list of names/texts and the id of the select element
-function initSelect(data, selectId){
+function initSelect(data, selectId, value){
   var str = "";
-  var i = 1;
+  var i = 0;
   for (var item of data) {
     str += "<option value=\"" + i + "\">" + item + "</option>";
     i+=1;
   }
   document.getElementById(selectId).innerHTML = str;
+  document.getElementById(selectId).selectedIndex = value;
 }
 
 // change values of the parameters when select value changes
@@ -85,41 +89,36 @@ function selectOnChange(selectID){
     parameter['policy'] = document.getElementById(selectID).value;
   }if (selectID=="selectFactor"){
     parameter['factor'] = document.getElementById(selectID).value;
-  }console.log(parameter['country'] +' '+ parameter['policy'] +' '+ parameter['factor'])
+  }console.log("parameters : " +parameter['country'] +' '+ parameter['policy'] +' '+ parameter['factor'])
   updateSelect();
-  updateGraph(DictData);
+  updateGraph();
 }
 
 
 
 
 function updateSelect() {
-  //clear svg
-  d3.select("path").remove();
-  d3.select("dot").remove();
-
   // maj X axis 
-  var x = d3.scaleTime()
-  .domain(d3.extent(DictData['date']))
+  XScale = d3.scaleTime()
+  .domain([new Date('2020-01-22'), new Date('2022-01-13')])
   .range([ 0, widthReduced ]);
   svg.selectAll("g.x.axis")
   .attr("transform", `translate(0, ${heightReduced})`)
-  .call(d3.axisBottom(x));
+  .call(d3.axisBottom(XScale));
 
   // maj Y axis
-  var y = d3.scaleLinear()
-  .domain([0,d3.max( DictData[countriesEurope[parameter['country']]] )])
-  .range([ heightReduced, 0 ]);
+  YRangeMin = Math.min(...transpose(DictData[parameter['country']])[1]);
+  YRangeMax = Math.max(...transpose(DictData[parameter['country']])[1]);
+  YScale = d3.scaleLinear()
+  .domain([YRangeMin, YRangeMax])
+  .range([heightReduced, 0 ]);
   svg.selectAll("g.y.axis")
-  .call(d3.axisLeft(y));
+  .call(d3.axisLeft(YScale));
 }
 
-function updateGraph(data){
-  console.log("ma grosse bite");
-  console.log(data);
+function updateGraph(){
   var selection = svg.selectAll("new_path")
-  .data([data])
-  .attr('bite', function(d){console.log(d)})
+  .data([DictData[parameter['country']]])
   .join(
     function(enter){
       return enter.append("path");
@@ -137,19 +136,20 @@ function updateGraph(data){
   .attr("stroke", "blue")
   .attr("d", d3.line()
     .curve(d3.curveLinear)
-    .x(function(d) { return xScale(new Date(d['date'])) })
-    .y(function(d) { return yScale(d['France']) })
+    .x(function(d) { return XScale(d[0]) })
+    .y(function(d) { return YScale(d[1]) })
   )
-  .attr("transform", `translate(${margin.left}, 0)`)
   .lower();
 }
+ 
 
 
 
 
 
-
-
+function transpose(array2D){
+  return array2D[0].map((_, colIndex) => array2D.map(row => row[colIndex]));
+}
 
 
 
