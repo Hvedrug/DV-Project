@@ -1,10 +1,11 @@
-// set the dimensions and margins of the graph
+var color1 = getComputedStyle(document.documentElement).getPropertyValue('--text-color');
+var darkModeValue = 1; //used for true
 const margin = {top: 10, right: 30, bottom: 30, left: 60};
 const width = 800;
 const height = 400;
 const widthReduced = width - margin.left - margin.right;
 const heightReduced = height - margin.top - margin.bottom;
-const countriesEurope = ['Albania', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria', 'Croatia', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Moldova', 'Montenegro', 'Netherlands', 'North Macedonia', 'Norway', 'Poland', 'Portugal', 'Romania', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'Switzerlandh', 'Ukraine', 'United Kingdom']
+const countriesEurope = ['Albania', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria', 'Croatia', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Moldova', 'Montenegro', 'Netherlands', 'North Macedonia', 'Norway', 'Poland', 'Portugal', 'Romania', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'Switzerland', 'Ukraine', 'United Kingdom']
 const governmentPolicies = ["testing_policy","vaccination_policy","facial_coverings","income_support","public_information_campaigns","cancel_public_events","close_public_transport","school_closures","stay_home_requirements"];
 const covidFactors = ["Daily new Covid cases", "Daily number of death", "Number of people in public spaces", "Number of people in public transport", "Number of people in work places", "Number of people in grocery stores", "Number of people in non essential stores"]
 var parameter = {country: 11, policy: 2, factor: 0};
@@ -22,17 +23,41 @@ const svg = d3.select("#third-graph")
 .attr("transform", `translate(${margin.left},${margin.top})`);
 
 
-
+function darkMode(){
+  if (darkModeValue==1){
+    darkModeValue=0;
+    document.documentElement.style.setProperty('--body-bg-color', '#F5F5F5');
+    document.documentElement.style.setProperty('--card-bg-color', '#E5E5E5');
+    document.documentElement.style.setProperty('--select-bg-color', '#D5D5D5');
+    document.documentElement.style.setProperty('--divider-color', '#C5C5C5');
+    document.documentElement.style.setProperty('--text-color', '#212121');
+    document.documentElement.style.setProperty('--title-color-bright', '#01579B');
+    document.documentElement.style.setProperty('--title-color-muted', '#039BE5');
+    color1 = '#212121';
+  }else{
+    darkModeValue=1;
+    document.documentElement.style.setProperty('--body-bg-color', '#121212');
+    document.documentElement.style.setProperty('--card-bg-color', '#202020');
+    document.documentElement.style.setProperty('--select-bg-color', '#323232');
+    document.documentElement.style.setProperty('--divider-color', '#484848');
+    document.documentElement.style.setProperty('--text-color', '#E1F5FE');
+    document.documentElement.style.setProperty('--title-color-bright', '#039BE5'); 
+    document.documentElement.style.setProperty('--title-color-muted', '#4FC3F7');
+    color1 = '#E1F5FE';
+  }
+  updateALL(extractedData);
+}
 
 
 
 
 // load the first set of data when load page
 window.onload = function() {
+  darkMode()
   initSelect(countriesEurope, "selectCountry", parameter["country"]);
   initSelect(governmentPolicies, "selectPolicy", parameter["policy"]);
   initSelect(covidFactors, "selectFactor", parameter["factor"]);
-  initSelect(countriesEurope, "selectGraph3", parameter["country"]);
+  initSelect(countriesEurope, "selectGraph3", 1);
   initPage('data/new_deaths_per_million.csv');
 };
   
@@ -51,10 +76,12 @@ function initPage(src){
   // Add X axis 
   svg.append("g")
   .attr("class", "x axis")
-  .attr("transform", `translate(0, ${height})`); 
+  .attr("transform", `translate(0, ${height})`)
+  .attr('stroke', color1);
   // Add Y axis
   svg.append("g")
-  .attr("class", "y axis");
+  .attr("class", "y axis")
+  .attr('stroke', color1);
   svg.append("g")
   .attr("class", "rect");
 
@@ -73,6 +100,7 @@ function updateALL(graphData) {
   .range([ 0, widthReduced ]);
   svg.selectAll("g.x.axis")
   .attr("transform", `translate(0, ${heightReduced})`)
+  .attr('stroke', color1)
   .call(d3.axisBottom(XScale));
 
   // maj Y axis
@@ -80,6 +108,7 @@ function updateALL(graphData) {
   .domain([getMin(graphData), getMax(graphData)])
   .range([heightReduced, 0 ]);
   svg.selectAll("g.y.axis")
+  .attr('stroke', color1)
   .call(d3.axisLeft(YScale));
 
   var selection = svg.selectAll(".new_path")
@@ -108,18 +137,17 @@ function updateALL(graphData) {
   .lower();
 
   for (i=0; i<graphData.length; i++){
-    svg.append('rect')
-      .attr('x', XScale((i+1)*30))
-      .attr('y', 0)
-      .attr('width', 1)
-      .attr('height', heightReduced)
-      .attr('stroke', 'black');
+    svg.append('line')
+      .attr('x1', XScale((i+1)*30))
+      .attr('y1', 0)
+      .attr('x2', XScale((i+1)*30))
+      .attr('y2', heightReduced)
+      .attr('stroke', color1)
+      .style("stroke-width", 1);
   }
 
 }
  
-
-
 
 
 
@@ -147,7 +175,7 @@ function getData(mySRC, myOUT){
         myOUT[j].push([date,temp]);
         temp=0;
       }});  
-}
+} 
 
 // function that take a liste of string containing dates "listDate"
 // an array of data contained in the file "countryData" probably a sub array of dictData
@@ -159,7 +187,7 @@ function extractData(listDate, countryData, color, myOUT){
   }
   //for each date in the list
   for (d=0; d<listDate.length; d++){
-    console.log(d);
+    //console.log(d+currentMyOUTlength);
     //get the indice in the data where we want to start plotting (date of implementatio of the policy)
     var  indice = 0;
     var begginingDate = new Date(listDate[d]);
@@ -170,7 +198,7 @@ function extractData(listDate, countryData, color, myOUT){
     }
     //get the 30 first element from the date of implementation of the policy
     //normalize then to have 0=number of cases the first day
-    for (j=0; j<30; j++){
+    for (j=0; j<31; j++){
       if (indice+j >= countryData.length) { break; }
       myOUT[d+currentMyOUTlength].push(
         [
@@ -234,7 +262,7 @@ function selectOnChange(selectID){
 function selectOnChangeG3(selectID){
   extractedData = [];
   extractedData = extractData(startDate, dictData[parameter['country']], "red", extractedData);
-  extractedData = extractData(startDate, dictData[document.getElementById(selectID).value], "red", extractedData);
+  extractedData = extractData(startDate, dictData[document.getElementById(selectID).value], color1, extractedData);
   updateALL(extractedData);
 }
 
@@ -265,4 +293,9 @@ function getMax(arrayData){
   }
   return Math.max(...temp);
 }
+
+
+
+
+
 
