@@ -21,6 +21,11 @@ var listMaxY = {};  // idem for max
 var graphPeriod = [new Date('2020-01-01'), new Date('2021-01-01')];  // period of the values 
 const fomatTimeTooltip = d3.timeFormat("%A %d %b %Y");
 
+
+
+// FUNCTIONS
+
+
 europeanCountries.forEach(function(country){
 	dictCountriesPolicies[country] = {};
 	dictDeathPerCountry[country] = [];
@@ -33,16 +38,14 @@ europeanCountries.forEach(function(country){
 
 // DEBUG VARIABLES (USEFUL FOR NOW)
 const data_filename = "new_deaths_per_million.csv"
-var countriesDisplayed = JSON.parse(JSON.stringify(europeanCountries)); // deep copy
-var countryHighligthed = "France";
+var countriesDisplayed = ["France", "United Kingdom"]; // "Germany", "United Kingdom", "Italy", "Spain"]; //JSON.parse(JSON.stringify(europeanCountries)); // deep copy
+var countryHighlighted = "France";
 
 
 // COMPUTING POLICY CHANGES IN EACH COUNTRY SELECTED FOR EACH POLICY SELECTED
-function computePolicies(){
-
-	policiesFilenameList.forEach(function(policy_filename){  // for each policy filename
-
-		d3.csv(dataFolderPrefix+policy_filename).then(function(data) {
+async function computePolicies(){
+	await policiesFilenameList.forEach(function(policy_filename){  // for each policy filename
+		d3.dsv(",", dataFolderPrefix+policy_filename).then(function(data){
 
 			data.map(function(line){  // for each line
 
@@ -52,24 +55,26 @@ function computePolicies(){
 						policy_idx = parseInt(line[dictFilenameToColumn[policy_filename]]);
 						date = line["Day"];
 
-						dictCountry = dictCountriesPolicies[country_name][policy_filename];
-						if (dictCountry.last_idx != policy_idx){
-							dictCountry.last_idx = policy_idx;
-							dictCountry.list_dates.push(date);
-							dictCountry.list_idx.push(policy_idx);
+						if (new Date(date) > new Date("2020-01-21")){
+							dictCountry = dictCountriesPolicies[country_name][policy_filename];
+							if (dictCountry.last_idx != policy_idx){
+								dictCountry.last_idx = policy_idx;
+								dictCountry.list_dates.push(new Date(date));
+								dictCountry.list_idx.push(policy_idx);
+							}
 						}
 					}
 				});
-			});
-		});
+			})
+		})
 	});
-	computeDeath();
 }
 
 
 // COMPUTE DEATHS PER MILLION PER DAY FOR EACH COUNTRY SELECTED
 function computeDeath(){
 	
+
 	d3.csv(dataFolderPrefix+data_filename).then(function(data) {
 
 		data.map(function(line){
@@ -80,6 +85,7 @@ function computeDeath(){
 				if(country != "Date"){
 					if(line[country] != ""){
 						value = parseFloat(line[country]);  // parse to Float
+						if(value < 0) value = 0;
 					}
 				}else{
 					value = new Date(line["date"]);  // parse to Date
@@ -88,17 +94,17 @@ function computeDeath(){
 
 			});
 		});
-		computeMinMax();
 	});
+	return;
 }
 
 
 // COMPUTE THE MIN AND MAX FOR EACH COUNTRY
 function computeMinMax(){
+	console.log("computeMinMax IN at ", new Date().getTime());
 	nbDays = dictDeathPerCountry["Date"].length;
 
 	europeanCountries.forEach(function(country){
-		listMinY[country] = Math.min(...dictDeathPerCountry[country]);
 		listMaxY[country] = Math.max(...dictDeathPerCountry[country]);
 
 	});
@@ -107,9 +113,8 @@ function computeMinMax(){
 	graphPeriod[1] = dictDeathPerCountry["Date"][nbDays - 1];
 
 	updateAxis(graphPeriod, []);
-	newCountrySelected();
-}
 
+}
 
 
 // Set the dimensions and margins of the graph
@@ -130,7 +135,7 @@ var title = graph.append("text")
 	.style("font-size", "20px") 
 	.style("font-weight", "bold")
 	.style("font-family", "sans-serif")
-	.text(data_filename+" in "+ countryHighligthed);
+	.text(data_filename+" in "+ countryHighlighted);
 
 
 
@@ -169,54 +174,121 @@ const tooltip = svg.append("g")
 	.style("pointer-events", "none");
 
 
-var selectionMinY;
-var selectionMaxY;
-var dataY;
+// FUNCTIONS
+
 
 function update_1st_graph(){
 
-	listX = [];
-	listY = [];
-
-	listX = dictDeathPerCountry["Date"];
-	//listY = dictDeathPerCountry[countriesDisplayed];
-
-	selectionMinY = [];
-	selectionMaxY = [];
+	selectionMaxY = [listMaxY[countryHighlighted]];
 	countriesDisplayed.forEach(function(country){
-		selectionMinY.push(listMinY[country]);
 		selectionMaxY.push(listMaxY[country]);
 	});
 
-	datay = [Math.min(...selectionMinY),Math.max(...selectionMaxY)];
+	maxy = Math.max(...selectionMaxY);
+	miny = - 0.1 * maxy
+	datay = [miny, maxy];
 	console.log(datay);
 
 	updateAxis([], datay);
-
 	updateGraph(countriesDisplayed);
+	updateRect(miny);
+	updateCircles();
+
+}
+
+function updateCircles(){
+
+	dataX = [];
+	dataY = [];
+	policiesFilenameList.forEach(function(policy_name){
+		dataX = dataX.concat(dictCountriesPolicies[countryHighlighted][policy_name].list_dates);
+	});
+
+	temp = d3.scaleLinear()
+	.domain(graphPeriod)
+	.range([0, nbDays]);
+
+	dataX.forEach(function(date){
+		dataY.push(dictDeathPerCountry[countryHighlighted][parseInt(temp(date))]);
+	});
+
+	
+	var selection = svg.selectAll(".new_circles")
+	.data(dataX)
+	.join(
+		function(enter){
+			return enter.append("circle");
+		}
+		,
+		function(update){
+			return update;
+		},
+		function(exit){
+			return exit.remove();
+		}
+
+	)
+	.attr("fill", "blue")
+	.attr("stroke", "black")
+	.attr("class", "new_circles")
+	.attr("cx", function(d) { return xScale(d) })
+	.attr("cy", function(_, i) { return yScale(dataY[i]) })
+	.attr("r", 3)
+	.attr("transform", `translate(${margin.left}, 0)`);
 
 }
 
 
+
+function updateRect(size){
+	selectedPolicy = "school-closures-covid.csv";
+
+	listDates = dictCountriesPolicies[countryHighlighted][selectedPolicy].list_dates;
+	listIdx = dictCountriesPolicies[countryHighlighted][selectedPolicy].list_idx;
+	rect_color = d3.scaleQuantize()
+		.domain([0,5])
+		.range(["#FFF3E0", "#FFCC80", "#FFA726", "#FB8C00", "#EF6C00"]);
+
+
+	dataX = listDates.concat(graphPeriod[1]);
+
+	var selection = svg.selectAll(".new_rect")
+	.data(listDates)
+	.join(
+		function(enter){
+			return enter.append("rect");
+		}
+		,
+		function(update){
+			return update;
+		},
+		function(exit){
+			return exit.remove();
+		}
+
+	)
+	.attr("fill", function(_, i){ return rect_color(listIdx[i]) })
+	.attr("stroke", "black")
+	.attr("class", "new_rect")
+	.attr("x", function(_, i) { return xScale(dataX[i]) })
+	.attr("y", function(d, _) { return yScale(0) })
+	.attr("width", function(_, i){ return xScale(dataX[i+1]) - xScale(dataX[i])})
+	.attr("height", yScale(size) - yScale(0))
+	.attr("transform", `translate(${margin.left}, 0)`)
+	.lower();
+
+}
+
 function updateGraph(){
 
 	var dataX = dictDeathPerCountry["Date"];
-	var dataY = [];
-
-	idx = countriesDisplayed.findIndex(element => element === countryHighligthed );
-	countriesDisplayed.splice(idx, 1); // remove the countryHighlighted
-	countriesDisplayed.unshift(countryHighligthed); // add it at the bottom of the array
+	var dataY = [dictDeathPerCountry[countryHighlighted]];
+	var colors = ["#ff0000"];
 
 	countriesDisplayed.forEach(function(country){ 
+		if (country != countryHighlighted) {
 			dataY.push(dictDeathPerCountry[country]);
-		});
-
-	colors = [];
-	countriesDisplayed.forEach(function(country){
-		if (country  != countryHighligthed){
 			colors.push(["#B9B9B9"]);
-		}else{
-			colors.push(["#ff0000"]);
 		}
 	});
 
@@ -244,8 +316,9 @@ function updateGraph(){
 		.x(function(_, i) { return xScale(dataX[i]) })
 		.y(function(d, _) { return yScale(d) })
 	)
-	.attr("transform", `translate(${margin.left}, 0)`)
-	.lower();  // draw the graph after other things
+	.attr("transform", `translate(${margin.left}, 0)`);
+	//.raise();  // draw the graph after other things
+
 
 }
 
@@ -277,55 +350,57 @@ function pointermoved(event){
 	var xVal = mouseX - margin.left;
 	var index = parseInt((mouseX-margin.left) * nbDays/svg_size.width);
 	var xDataValue = dictDeathPerCountry["Date"][index];
-	var yDataValue = dictDeathPerCountry[countryHighligthed][index];
+	var yDataValue = dictDeathPerCountry[countryHighlighted][index];
 	var yVal = yScale(yDataValue) - 20;
-	var textContent = [yDataValue, fomatTimeTooltip(xDataValue)];
+	var textContent = [];
 
-	tooltip.style("display", null);
+	policiesFilenameList.forEach(function(policy_name){
+		idx = 0;
+		ldates = dictCountriesPolicies[countryHighlighted][policy_name].list_dates.concat(graphPeriod[1]);
+		lidx = dictCountriesPolicies[countryHighlighted][policy_name].list_idx;
+		for(var j=0; j< ldates.length; j++){
+			if (xDataValue >= ldates[j] && xDataValue <= ldates[j+1]){
+				idx = lidx[j];
+			}
+		}
+		if(idx != 0) textContent.push(`${policy_name.split(".")[0]}:${idx}`);
+	});
 
-	const path = tooltip.selectAll("path")
-		.data([,])
-		.join("path")
-			.attr("fill", "white")
-			.attr("stroke", "black");
+	textContent.push(`Deaths : ${yDataValue}`);
+	textContent.push(fomatTimeTooltip(xDataValue));
 
-	if(yVal === yVal){  // if yVal is not NaN
+	dataX = xScale(xDataValue);
+	if (dataX == undefined) dataX = xScale(0);
+	
+	dataY = yScale.range();
 
-		const text = tooltip.selectAll("text")
-			.data([,]) //textContent)
-			.join("text")
-			.call(text => text
-				.selectAll("tspan")
-				.data(textContent)
-				.join("tspan")
-					//.attr("x", mouseX)
-					.attr("y", (_, i) => `${yVal - i * 20}`)
-					.text(d => d));
+	var selection = svg.selectAll(".new_line")
+	.data([dataY])
+	.join(
+		function(enter){
+			return enter.append("path");
+		}
+		,
+		function(update){
+			return update;
+		},
+		function(exit){
+			return exit.remove();
+		}
 
-		const {x, y, width: w, height: h} = text.node().getBBox();
-		//console.log(x,y, w, h);
-
-		text.selectAll("tspan").attr("x", mouseX - w / 2)
-
-		path.attr("d", createPath(mouseX, yVal, w, h));
-	}
+	)
+	.attr("fill", "none")
+	.attr("class", "new_line")
+	.attr("stroke", "black")
+	.attr("d", d3.line()
+		.curve(d3.curveLinear)
+		.x(function(_, i) { return dataX })
+		.y(function(d, i) { return dataY[i] })
+	)
+	.attr("transform", `translate(${margin.left}, 0)`);
 	
 }
 
-function createPath(x, y, w, h){
-	// TODO add max-like parameter to prevent the tooltip to be too far left or too far right
-	var path = d3.path();
-	path.moveTo(x - w / 2 - 10, y - h / 2 - 20);
-	path.lineTo(x + w / 2 + 10, y - h / 2 - 20);
-	path.lineTo(x + w / 2 + 10, y + 10);
-	path.lineTo(x + 3,          y + 10);
-	path.lineTo(x,              y + 15);
-	path.lineTo(x - 3,          y + 10);
-	path.lineTo(x - w / 2 - 10, y + 10);
-	path.closePath();
-
-	return path.toString();
-}
 
 function pointerleft(){
 	tooltip.style("display", "none");
@@ -348,11 +423,16 @@ function initSelect(data, selectId){
 }
 
 function newCountrySelected(){
-	countryHighligthed = europeanCountries[document.getElementById("selectCountryFirstGraph").value];
-	console.log("hererere", value);
+	countryHighlighted = europeanCountries[document.getElementById("selectCountryFirstGraph").value];
+	console.log("newCountrySelected DONE");
 	update_1st_graph();
 }
 
 
 initSelect(europeanCountries, "selectCountryFirstGraph");
-computePolicies();
+
+
+setTimeout(()=>{computePolicies()}, 0)
+setTimeout(()=>{computeDeath()}, 0)
+setTimeout(()=>{computeMinMax()}, 500)
+setTimeout(()=>{update_1st_graph()}, 1000)
