@@ -53,17 +53,6 @@ g1_height = g1_svg_size.height - g1_margin.top - g1_margin.bottom;
 // create the grap area
 const g1_graph = d3.select("#graph_area");
 
-// g1_title
-/*var g1_title = g1_graph.append("text")
-	.attr("x", g1_width / 2)
-	.attr("y", g1_margin.top / 4)
-	.attr("text-anchor", "middle")
-	.style("font-size", "20px") 
-	.style("font-weight", "bold")
-	.style("font-family", "sans-serif")
-	.text(g1_data_filename+" in "+ g1_countryHighlighted);
-*/
-
 // construct scales and axes
 const g1_xScale = d3.scaleTime()
 	.domain(g1_graphPeriod)
@@ -96,6 +85,56 @@ const g1_tooltip = g1_svg.append("g")
 	.style("pointer-events", "none");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var g2_countryHighlightedDateBegin;
+var g2_graphPeriod = [0, 30];  // period of the values 
+const g2_fomatTimeTooltip = d3.timeFormat("%A %d %b %Y");
+const g2_graphColors = ["#FF6D00", "#FF6E40", "#64FFDA", "#448AFF", "#E040FB"];
+
+var g2_policySelected = "stay-at-home-covid.csv";
+var g2_policyLevelSelected = 2;
+
+// Set the dimensions and g2_margins of the g2_graph
+const g2_svg_size = {width:800, height:400};
+const g2_margin = {top: 20, right: 30, bottom: 20, left: 40},
+g2_width = g2_svg_size.width - g2_margin.left - g2_margin.right,
+g2_height = g2_svg_size.height - g2_margin.top - g2_margin.bottom;
+
+// create the grap area
+const g2_graph = d3.select("#g2_graph_area");
+
+// construct scales and axes
+const g2_xScale = d3.scaleLinear()
+	.domain(g2_graphPeriod)
+	.range([ 0, g2_svg_size.width]);
+
+const g2_yScale = d3.scaleLinear()
+	.domain([-100, 100])
+	.range([g2_svg_size.height, 0]);
+
+const g2_Xaxis = d3.axisBottom(g2_xScale);
+const g2_Yaxis = d3.axisLeft(g2_yScale);
+
+// construct SVG
+const g2_svg = g2_graph.append("svg")
+	.attr("viewBox", `0 0 ${g2_svg_size.width+g2_margin.left+g2_margin.right} ${g2_svg_size.height+g2_margin.top+g2_margin.bottom}`)
+	.on("pointerenter pointermove", g2_pointermoved)
+	.on("pointerleave", g2_pointerleft);
+
+g2_svg.append("g")
+	.attr("transform", `translate(${g2_margin.left}, ${g2_svg_size.height})`)
+	.attr("class", "xaxis")
+	.call(g2_Xaxis);
+
+g2_svg.append("g")
+	.attr("transform", `translate(${g2_margin.left},0)`)
+	.attr("class", "yaxis")
+	.call(g2_Yaxis);
+
+const g2_tooltip = g2_svg.append("g")
+	.style("pointer-events", "none");
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // variable for third graph g3_svg dimensions
 const g3_margin = {top: 10, right: 30, bottom: 50, left: 60};
@@ -184,9 +223,10 @@ window.onload = function() {
   setTimeout(()=>{g1_computeDeath()}, 0);
   setTimeout(()=>{g1_computeMinMax()}, 500);
   setTimeout(()=>{g1_update()}, 1000);
+  setTimeout(()=>{g2_update()}, 1000);
   setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1000);
   darkMode();
-};
+}; 
 
 // function to change the page theme
 function darkMode(){
@@ -247,6 +287,7 @@ function selectOnChange(selectID){
   }console.log("selectParameters : " +selectParameter['country'] +' '+ selectParameter['policy'] +' '+ selectParameter['factor'])
 
   g1_update();
+  g2_update();
 
   startDate = [];
   startDate = g3_getPolicyChangesDates(selectParameter['country'], selectParameter['policy'], g1_dictCountriesPolicies);
@@ -316,7 +357,6 @@ function g1_computeMinMax(){
 	g1_updateAxis(g1_graphPeriod, []);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -324,7 +364,7 @@ function g1_computeMinMax(){
 
 
 
-
+ 
 
 
 
@@ -626,6 +666,179 @@ function g1_computeDeath(){
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// FOR GRAPH 2
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// UPDATE GRAPH
+
+function g2_update(){
+	var selectionMaxY = [];
+	var dataY = [];
+	var isDone = false;
+	var tempY;
+	var dateLevel = -1;
+	[g1_countryHighlighted].concat(g1_countriesDisplayed).forEach(function(country_name){
+		tempY = [];
+		listIndexes = g1_dictCountriesPolicies[country_name][g2_policySelected].list_idx;
+		listDates = g1_dictCountriesPolicies[country_name][g2_policySelected].list_dates;
+		for(var j = listIndexes.length -1; j>= 0; j--){
+			if(listIndexes[j] === g2_policyLevelSelected){
+				dateLevel = listDates[j];
+			}
+		}
+		if(dateLevel != -1){
+			idx_day1 = g1_dictDeathPerCountry["Date"].findIndex(function(elt){
+				return elt.getTime() === dateLevel.getTime();
+			})
+			if( (country_name === g1_countryHighlighted && !isDone) || country_name !== g1_countryHighlighted){
+				for(var j=idx_day1; j<idx_day1+31; j++){
+					tempY.push(g1_dictDeathPerCountry[country_name][j]);
+					selectionMaxY.push(g1_dictDeathPerCountry[country_name][j]);
+					if(country_name === g1_countryHighlighted && !isDone){
+						g2_countryHighlightedDateBegin = idx_day1;
+					}
+				}
+				dataY.push(tempY);
+			}
+		}else{
+			alert(country_name + " does not have a level " + g2_policyLevelSelected + " for the selected policy !");
+		}
+		if(country_name === g1_countryHighlighted) isDone = true;
+	});
+	var datay = [0, Math.max(...selectionMaxY)];
+	g2_updateAxis([], datay);
+	g2_update_graph(dataY);
+}
+
+function g2_update_graph(dataY){
+	console.log(dataY);
+	var selection = g2_svg.selectAll(".g2_new_path")
+	.data(dataY)
+	.join(
+		function(enter){return enter.append("path");},
+		function(update){return update;},
+		function(exit){return exit.remove();}
+	)
+	.attr("fill", "none")
+	.attr("class", "g2_new_path")
+	.attr("stroke-width", function(_, i){if(i==0) return 2; return 1})
+	.attr("stroke", function(_, i){ return g2_graphColors[i] })
+	.attr("d", d3.line()
+		.curve(d3.curveLinear)
+		.x(function(_, i) { return g2_xScale(i) })
+		.y(function(d, _) { return g2_yScale(d) })
+	)
+	.attr("transform", `translate(${g2_margin.left}, 0)`);
+}
+
+function g2_updateAxis(dataX, dataY){
+	if (dataX.length != 0){
+		g2_xScale.domain(dataX);
+		g2_svg.selectAll("g.xaxis")
+			.call(d3.axisBottom(g2_xScale));
+		console.log("g2_Xaxis updated with values : ", dataX);
+	}
+	if (dataY.length != 0){
+		//dataY[0] = 0;
+		g2_yScale.domain(dataY);
+		g2_svg.selectAll("g.yaxis")
+			.call(d3.axisLeft(g2_yScale));
+		console.log("g2_Yaxis updated with values : ", dataY);
+	}
+}
+
+function g2_pointermoved(event){
+	var coords = d3.pointer(event);  // coords of the mouse
+	var mouseX = coords[0];
+	var mouseY = coords[1];
+	var xVal = mouseX - g2_margin.left;
+	var index = parseInt((mouseX-g2_margin.left) * 30/g2_svg_size.width);
+	var xDataValue = g1_dictDeathPerCountry["Date"][g2_countryHighlightedDateBegin+index];
+	var yDataValue = g1_dictDeathPerCountry[g1_countryHighlighted][g2_countryHighlightedDateBegin+index];
+	var yVal = g2_yScale(yDataValue) - 20;
+	var textContent = [];
+
+	textContent.push(`Deaths : ${yDataValue}`);
+	textContent.push(g2_fomatTimeTooltip(xDataValue));
+	g2_tooltip.style("display", null);
+
+	const path = g2_tooltip.selectAll("path")
+		.data([,])
+		.join("path")
+			.attr("fill", "#e2e2e2")
+			.attr("stroke", "black");
+	if(yVal === yVal){  // if yVal is not NaN
+		const text = g2_tooltip.selectAll("text")
+			.data([,]) //textContent)
+			.join("text")
+			.call(text => text
+				.selectAll("tspan")
+				.data(textContent)
+				.join("tspan")
+					//.attr("x", mouseX)
+					.attr("y", (_, i) => `${yVal - i * 20}`)
+					.text(d => d));
+		g2_tooltip.raise();
+		const {x, y, width: w, height: h} = text.node().getBBox();
+		text.selectAll("tspan").attr("x", mouseX - w / 2)
+		path.attr("d", g2_createPath(mouseX, yVal, w, h));
+	}
+	
+}
+
+function g2_createPath(x, y, w, h, lim){
+	// TODO add boundaries parameter to prevent the tooltip to be too far left or too far right
+	/**
+	xmax = Math.min(x + w / 2 + 10, lim[0]);
+	xmin = Math.max(x - w / 2 - 10, lim[1]);
+	ymax = Math.min(y + 10, lim[2]);
+	ymin = Math.max(y - h / 2 - 20, lim[3]);
+	**/
+	xmax = x + w / 2 + 10;
+	xmin = x - w / 2 - 10;
+	ymax = y + 10;
+	ymin = y - h; // / 2 - 20;
+	var path = d3.path();
+	path.moveTo(xmin, ymin);
+	path.lineTo(xmax, ymin);
+	path.lineTo(xmax, ymax);
+	path.lineTo(x + 3, ymax);
+	path.lineTo(x,     ymax + 5);
+	path.lineTo(x - 3, ymax);
+	path.lineTo(xmin, ymax);
+	path.closePath();
+	return path.toString();
+}
+
+function g2_pointerleft(){
+	g2_tooltip.style("display", "none");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FOR GRAPH 3
@@ -904,3 +1117,5 @@ function g3_getPolicyChangesDates(countryIndice, PolicyIndice, dataSRC) {
 
 //modifications to make
 //when no data, print line in alt color (same as the zero line => like if we don't draw it)
+
+//
