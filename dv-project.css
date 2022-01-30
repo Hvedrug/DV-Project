@@ -64,21 +64,12 @@ option:checked {
   stroke: var(--title-color-bright);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
+th, td {
+  border-right: 1px solid var(--text-color);
+}
+th, tr {
+  border-bottom: 1px solid var(--text-color);
+}
 
 .box select {
   background-color: var(--select-bg-color);
@@ -117,37 +108,51 @@ option:checked {
   padding: 30px;
 }
  
+.box select {
+  background-color: var(--select-bg-color);
+  color: var(--text-color);
+  padding: 12px;
+  width: 250px;
+  border: none;
+  font-size: 20px;
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.2);
+  -webkit-appearance: button;
+  appearance: button;
+  outline: none;
+}
+
+.box::before {
+
+  font-family: FontAwesome;
+  top: 0;
+  right: 0;
+  width: 20%;
+  height: 100%;
+  text-align: center;
+  font-size: 28px;
+  line-height: 45px;
+  color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.box:hover::before {
+  color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.box select option {
+  padding: 30px;
+}
 
 
 
 
 
 
+/* |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* the next part of the code has been extracted from Bootstrap 5*/
 
 .card-panel {
   -webkit-transition: -webkit-box-shadow .25s;
