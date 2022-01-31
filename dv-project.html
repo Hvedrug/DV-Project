@@ -120,7 +120,12 @@
 						<h6>Select one country to compare</h6>
 						<div class="box">
 						<select id="selectGraph3" class="custom-select" onchange="g3_selectChange('selectGraph3')">
-						</select></div>
+						</select><label class="switch">
+						  <input type="checkbox" checked onclick="g3_checkboxChange('sliderText')">
+						  <span class="slider"></span>
+						</label>
+						<label id="sliderText" for="checkbox">Deaths per million</label>
+						</div>
 					</div>
 				</div>
 				<div class="col s8">
