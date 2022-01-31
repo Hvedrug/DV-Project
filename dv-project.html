@@ -10,6 +10,7 @@
 	<meta name="author" content="Guerin Clement">
 	<meta name="author" content="Garnier Raphael">
 	<meta name="description" content="Jan 2022, Data Visulization project. Theme: How gov. policies impact Covid19 pandemic">
+	<meta name="credits" content="Some code of the .css file has been taken from Bootstrap">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
@@ -25,7 +26,7 @@
 				<h1>The impact of government policies on Covid19 pandemic</h1>
 				<h5>author: Garnier Raphael, Guerin Clement</h5>
 				<h6>date: January 14th 2022</h6>
-				<p class="text-justify"></br>This work has been made for our project of data visualization. Its goal is to show the impact of the various policies government implement during the Covid19 pandemic on the later one. Please note that our data stop at January 14th 2022.</br>You can select one European country to highlight. By default France is selected. You can also select a government policy. By default face covering is selected. Finally you can select the factor you want to display. It can be the number of daily new cases, deaths, the population in public parks, at work, in public transport or in grocery shops. By default, daily new cases is selected.</p>
+				<p class="text-justify"></br>This work has been made for our project of data visualization. Its goal is to show the impact of the various policies each european government implemented during the Covid-19 pandemic. Please note that our data stops at January 14th 2022.</br>You can select one European country to highlight. By default France is selected. You can also select a government policy. By default face covering is selected. Finally you can select the factor you want to display. It can be the number of daily new cases, deaths, the population in public parks, at work, in public transport or in grocery shops. By default, daily new cases is selected.</p>
 			</div>
 
 			<!-- selectors for graph -->
@@ -62,7 +63,6 @@
 				<div class="col s12">
 					<div class="card-panel z-depth-1">
 						<h5><span id="g1_title"></span></h5></br></br>
-						<!--<img class="responsive-img" src="preliminary-report/drawing1.png">-->
 						<div id="graph_area"></div>
 					</div>
 				</div>
@@ -73,7 +73,10 @@
 								<p class="text-justify"><span id="g1_legendTable"></span></p>
 							</div>
 							<div class="col s6">
-								<p class="text-justify">You can see here the date of the implementation of the different level of <span id="g1_policyName1"></span> policies during the pandemic. You can also see the number of daily death in some european countries with highlight on <span id="g1_countryName1"></span>. For every change in <span id="g1_policyName2"></span> in <span id="g1_countryName2"></span>, you can see a circle on the graph. By hovering the graph you can see the precise data and the policies applied at that time in <span id="g1_countryName3"></span>.</p>
+								<p class="text-justify">You can see here the date of the implementation of the different levels of the <span id="g1_policyName1"></span> policy during the pandemic. You can also see the number of daily death in some european countries with highlight on <span id="g1_countryName1"></span>. For every change in any policy in <span id="g1_countryName2"></span>, you can see a circle on the graph. By hovering the graph you can see the precise data and the policies applied at that time in <span id="g1_countryName3"></span>. You can compare display the graph of another country by using the selector under.</p>
+								<div class="box">
+								<select id="selectGraph1" class="custom-select" onchange="g1_selectChange('selectGraph1')">
+								</select></div>
 							</div>
 						</div>
 					</div>
@@ -85,7 +88,7 @@
 			<div class="row">
 				<div class="col s8">
 					<div class="card-panel z-depth-1">
-						<h5>Second Graph</h5>
+						<h5><span id="g2_title"></span></h5>
 						<!--<img class="responsive-img" src="preliminary-report/drawing1-1.png">-->
 						<div id="g2_graph_area"></div>
 					</div>
@@ -93,7 +96,16 @@
 				<div class="col s4">
 					<div class="card-panel z-depth-1">
 						<h5>Legend and explainations</h5>
-						<p>this is some text ... dihf doihf doihf d oidhf so dfhod  doifhds s doifyys dfos dfidyf sodifys dof sodifys dofisdfso fosd gsodifgys dgopsd sdogisd gsdo gsd gsdo gsd gosd gs gsd og sdgoidyg sd gosdigys g sodfigysf godsf igf godigds fg dofigyd</p>
+						<p>This graph shows the evolution of the selected factor according to selected gorvernment policy in the country selected at the level choosen. You can compare the effects by choosing another country with the selector under. The data displayed corresponds to the first time the policy at this level was implemented in the countries selected.</p>
+						<h6>Select the level of policy</h6>
+						<div class="box">
+						<select id="selectPolicyLevelGraph2" class="custom-select" onchange="g2_selectChange('selectPolicyLevelGraph2')">
+						</select></div>
+						<h6>Select one country to compare</h6>
+						<div class="box">
+						<select id="selectGraph2" class="custom-select" onchange="g2_selectChange('selectGraph2')">
+						</select></div>
+						</br>
 					</div>
 				</div>
 			</div>
@@ -104,8 +116,8 @@
 				<div class="col s4">
 					<div class="card-panel z-depth-1">
 						<h5>Legend and explainations</h5>
-						<p class="text-justify">This graph represent the impact of various <span id="g3_policy_name"></span> level on the number of new covid cases in <span id="g3_country_name"></span> for a period of 30 days. How to read this graph? This graph is separated in multiple sub-graphs, each one of them represent a different level of the policy (from lower to higher). For each sub-graph you see the evolution of new covid cases in percentage relatively to the first day of application of that policy. </br></br>The horizontal line indicate the amount of death on day 1, if the orange line goes under it means that the policy is effective.</br></br>WARNING : Ascending policy level might not be implemented chronologically</br></br><span id="g3_table"></span></br>You can also use the selector under to add another country to compare to the graph.</p>
-						<h6>Select one or more countries to compare</h6>
+						<p class="text-justify">This graph shows the impact of various <span id="g3_policy_name"></span> levels on the number of covid-related death (per milion) in <span id="g3_country_name"></span> for a period of 30 days.</br>This graph is separated in multiple sub-graphs, each of them showing a different level of the policy (from lower to higher). For each sub-graph you see the evolution of the number of covid-related deaths (per milion) in percentage relative to the first day of application of that policy level. Each graph shows the data for the first time this very policy level has been implemented. </br></br>The horizontal line indicates the amount of deaths on day 1: if the orange line goes under it means that the policy is effective.</br></br>WARNING : Even if the policy level is increasing from left to right on the graph, the policy levels may not have been implemented in chronological order</br></br><span id="g3_table"></span></br>You can use the selector under to add another country to compare to the graph.</p>
+						<h6>Select one country to compare</h6>
 						<div class="box">
 						<select id="selectGraph3" class="custom-select" onchange="g3_selectChange('selectGraph3')">
 						</select></div>
@@ -117,15 +129,10 @@
 							<h5><span id="g3_title"></span></h5>
 						</div>
 						<div id="g3_legend" class="col s4"></div>
-						<!--<img class="responsive-img" src="preliminary-report/drawing1-2.png">-->
 						<div id="third-graph"></div>
 					</div>
 				</div>
 			</div>
-
-
-
-  
 
 
 		</div>
@@ -136,6 +143,9 @@
 
 
 	<script src="dv-project.js"></script>
-	<!--<script src="2nd_graph.js"></script>-->
 </body>
+
+<!-- ADD A FOOTER FOR THE CREDITS !! -->
+
+
 </html>

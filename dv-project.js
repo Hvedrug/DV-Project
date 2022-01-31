@@ -5,18 +5,19 @@ var themeAccentColor = getComputedStyle(document.documentElement).getPropertyVal
 var themeSecondaryAccentColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color');
 var themeTertiaryAccentColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color');
 var themeAccentRangeColor = ["#FFF3E0", "#FFCC80", "#FFA726", "#FB8C00", "#EF6C00"];
-var darkModeValue = 0; //on page load: changed to 0 and dark mode
+var darkModeValue = 0; //on page load: changed to 1 and light mode
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// variable for global selects (beggining of the doc)
-const europeanCountries = ['Albania', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria', 'Croatia', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Moldova', 'Montenegro', 'Netherlands', 'North Macedonia', 'Norway', 'Poland', 'Portugal', 'Romania', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'Switzerland', 'Ukraine', 'United Kingdom'];
+// variable for global selects
+const europeanCountries = ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Czechia', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom'];
 const governmentPolicies = ["testing_policy","vaccination_policy","facial_coverings","income_support","public_information_campaigns","cancel_public_events","close_public_transport","school_closures","stay_home_requirements"];
 const policiesFilenameList = ["covid-19-testing-policy.csv", "covid-vaccination-policy.csv", "face-covering-policies-covid.csv", "income-support-covid.csv", "public-campaigns-covid.csv", "public-events-covid.csv", "public-transport-covid.csv", "school-closures-covid.csv", "stay-at-home-covid.csv"];
-const covidFactors = ["Daily new Covid cases", "Daily number of death", "Number of people in public spaces", "Number of people in public transport", "Number of people in work places", "Number of people in grocery stores", "Number of people in non essential stores"];
+const covidFactors = ["Number of people in public transport", "Number of people in work places", "Number of people in grocery stores", "Number of people in non essential stores", "Number of people in public spaces", "Number of people in residential areas"];
+const policiesMaxLevel = {"covid-19-testing-policy.csv" : 3, "covid-vaccination-policy.csv" : 5, "face-covering-policies-covid.csv" : 4, "income-support-covid.csv" : 2, "public-campaigns-covid.csv" : 2, "public-events-covid.csv" : 2, "public-transport-covid.csv" : 2, "school-closures-covid.csv" : 3, "stay-at-home-covid.csv" : 3};
 var selectParameter = {country: 11, policy: 2, factor: 0};
 var g1_dictCountriesPolicies = {};
-const dataFolderPrefix = "data/";
+const dataFolderPrefix = "data/"; 
 const dictFilenameToColumn = {
 	"covid-19-testing-policy.csv":"testing_policy",
 	"covid-vaccination-policy.csv":"vaccination_policy",
@@ -28,20 +29,23 @@ const dictFilenameToColumn = {
 	"school-closures-covid.csv":"school_closures", 
 	"stay-at-home-covid.csv":"stay_home_requirements"
 };
+const factorsColumnNames = ["transit_stations", "workplaces", "grocery_and_pharmacy", "retail_and_recreation", "parks", "residential"];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // data for the first graph
-var g1_dictDeathPerCountry = {"Date":[]};
+var g1_dictDeathPerCountry = {"Date":[]};  //TODO REMOVE
+g1_dictFactorPerCountry = {"Date":[]};
 var g1_nbDays = 0;  // number of days studied
 var g1_listMinY = {};  // list of the minimum value for each country
 var g1_listMaxY = {};  // idem for max
 var g1_graphPeriod = [new Date('2020-01-01'), new Date('2021-01-01')];  // period of the values 
 const g1_fomatTimetooltip = d3.timeFormat("%A %d %b %Y");
+var g1_countryCompared = "Italy";
+const g1_death_filename = "new_deaths_per_million.csv";
 
 // DEBUG VARIABLES (USEFUL FOR NOW)
-const g1_data_filename = "new_deaths_per_million.csv";
-var g1_countriesDisplayed = ["United Kingdom"]; // "Germany", "United Kingdom", "Italy", "Spain"]; //JSON.parse(JSON.stringify(europeanCountries)); // deep copy
+g1_factor_filename = "changes-visitors-covid.csv";
 var g1_countryHighlighted = "France";
 
 // Set the dimensions and g1_margins of the g1_graph
@@ -90,9 +94,10 @@ var g2_countryHighlightedDateBegin;
 var g2_graphPeriod = [0, 30];  // period of the values 
 const g2_fomatTimeTooltip = d3.timeFormat("%A %d %b %Y");
 const g2_graphColors = ["#FF6D00", "#FF6E40", "#64FFDA", "#448AFF", "#E040FB"];
-
-var g2_policySelected = "stay-at-home-covid.csv";
-var g2_policyLevelSelected = 2;
+var g2_countryCompared = "Italy";
+var g2_policySelected =  "face-covering-policies-covid.csv";
+var g2_policyLevelSelected = 0;  // TODO
+var g2_factorSelected = factorsColumnNames[0];
 
 // Set the dimensions and g2_margins of the g2_graph
 const g2_svg_size = {width:800, height:400};
@@ -179,26 +184,6 @@ g3_svg.append("text")
 
 const g3_format = d3.timeFormat("%Y-%m-%d");
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -217,15 +202,21 @@ window.onload = function() {
   initSelect(europeanCountries, "selectCountry", selectParameter["country"]);
   initSelect(governmentPolicies, "selectPolicy", selectParameter["policy"]);
   initSelect(covidFactors, "selectFactor", selectParameter["factor"]);
+  initSelect(europeanCountries, "selectGraph1", 13);
+  initSelect(europeanCountries, "selectGraph2", 13);
+  initSelect(Array.from({length: policiesMaxLevel[policiesFilenameList[selectParameter["policy"]]] }, (v, i) => i), "selectPolicyLevelGraph2", 0);
   initSelect(europeanCountries, "selectGraph3", 1);
+
+
   g1_initPage();
   setTimeout(()=>{g1_computePolicies()}, 0);
   setTimeout(()=>{g1_computeDeath()}, 0);
+  setTimeout(()=>{g1_computeFactors()}, 0);
   setTimeout(()=>{g1_computeMinMax()}, 500);
-  setTimeout(()=>{g1_update()}, 1000);
-  setTimeout(()=>{g2_update()}, 1000);
-  setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1000);
-  darkMode();
+  setTimeout(()=>{g1_update()}, 1200);
+  setTimeout(()=>{g2_update()}, 1200);
+  setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1200);
+  darkMode(); 
 }; 
 
 // function to change the page theme
@@ -279,12 +270,15 @@ function initSelect(data, selectId, value){
 function selectOnChange(selectID){
   if (selectID=="selectCountry"){
     selectParameter['country'] = document.getElementById(selectID).value;
-    g1_countryHighlighted = europeanCountries[document.getElementById(selectID).value];
+    g1_countryHighlighted = europeanCountries[ectParameter['country']];
   }if (selectID=="selectPolicy"){
     selectParameter['policy'] = document.getElementById(selectID).value;
+    g2_policySelected = policiesFilenameList[selectParameter['policy']];
+    initSelect(Array.from({length: policiesMaxLevel[g2_policySelected] }, (v, i) => i), "selectPolicyLevelGraph2", 0);
   }if (selectID=="selectFactor"){
     selectParameter['factor'] = document.getElementById(selectID).value;
-  }console.log("selectParameters : " +selectParameter['country'] +' '+ selectParameter['policy'] +' '+ selectParameter['factor'])
+    g2_factorSelected = factorsColumnNames[selectParameter["factor"]];
+  }
 
   g1_update();
   g2_update();
@@ -297,6 +291,23 @@ function selectOnChange(selectID){
   g3_legend_content.push([themeSecondaryAccentColor, europeanCountries[selectParameter['country']]]);
   g3_update(g3_extractedData);
 }
+
+function g2_selectChange(selectID){
+  if (selectID == "selectGraph2"){
+    g2_countryCompared = europeanCountries[document.getElementById(selectID).value];
+  }
+  if (selectID == "selectPolicyLevelGraph2"){
+    g2_policyLevelSelected = parseFloat(document.getElementById(selectID).value);
+  }
+
+  g2_update();
+}
+
+function g1_selectChange(selectID){
+  g1_countryCompared = europeanCountries[document.getElementById(selectID).value];
+  g1_update(); 
+}
+
 
 // Add a country to the Graph 3 to compare with the first one
 function g3_selectChange(selectID){
@@ -347,7 +358,6 @@ function g3_getMax(arrayData){
 
 // COMPUTE THE MIN AND MAX FOR EACH COUNTRY
 function g1_computeMinMax(){
-	//console.log("g1_computeMinMax IN at ", new Date().getTime());
 	g1_nbDays = g1_dictDeathPerCountry["Date"].length;
 	europeanCountries.forEach(function(country){
 		g1_listMaxY[country] = Math.max(...g1_dictDeathPerCountry[country]);
@@ -356,19 +366,6 @@ function g1_computeMinMax(){
 	g1_graphPeriod[1] = g1_dictDeathPerCountry["Date"][g1_nbDays - 1];
 	g1_updateAxis(g1_graphPeriod, []);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
- 
-
-
-
-
 
 
 
@@ -379,13 +376,20 @@ function g1_computeMinMax(){
 
 // FOR GRAPH 1
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 function g1_initPage(){
 	europeanCountries.forEach(function(country){
 		g1_dictCountriesPolicies[country] = {};
-		g1_dictDeathPerCountry[country] = [];
+		g1_dictFactorPerCountry[country] = {};
+    g1_dictDeathPerCountry[country] = [];
 
 		policiesFilenameList.forEach(function(policy){
 			g1_dictCountriesPolicies[country][policy] = {last_idx:-1, list_dates:[], list_idx:[]};
+		})
+
+		factorsColumnNames.forEach(function(factor){
+			g1_dictFactorPerCountry[country][factor] = [];
 		})
 	})
 }
@@ -396,17 +400,15 @@ function g1_initPage(){
 
 function g1_update(){
 	selectionMaxY = [g1_listMaxY[g1_countryHighlighted]];
-	g1_countriesDisplayed.forEach(function(country){
-		selectionMaxY.push(g1_listMaxY[country]);
-	});
+  selectionMaxY.push(g1_listMaxY[g1_countryCompared]);
+
 
 	maxy = Math.max(...selectionMaxY);
 	miny = - 0.1 * maxy
 	datay = [miny, maxy];
-	//console.log(datay);
 
 	g1_updateAxis([], datay);
-	g1_updateg1_graph(g1_countriesDisplayed);
+	g1_updateg1_graph();
 	g1_updateRect(miny);
 	g1_updateCircles();
 	document.getElementById("g1_title").innerHTML = "Implementation of "+governmentPolicies[selectParameter['policy']]+" policies in "+europeanCountries[selectParameter['country']];
@@ -414,7 +416,6 @@ function g1_update(){
 	document.getElementById("g1_countryName2").innerHTML = ""+europeanCountries[selectParameter['country']];
 	document.getElementById("g1_countryName3").innerHTML = ""+europeanCountries[selectParameter['country']];
 	document.getElementById("g1_policyName1").innerHTML = ""+governmentPolicies[selectParameter['policy']];
-	document.getElementById("g1_policyName2").innerHTML = ""+governmentPolicies[selectParameter['policy']];
 }
 
 function g1_updateCircles(){
@@ -478,12 +479,10 @@ function g1_updateg1_graph(){
 	var dataY = [g1_dictDeathPerCountry[g1_countryHighlighted]];
 	var colors = [themeSecondaryAccentColor];
 
-	g1_countriesDisplayed.forEach(function(country){ 
-		if (country != g1_countryHighlighted) {
-			dataY.push(g1_dictDeathPerCountry[country]);
-			colors.push([themeAccentColor]);
-		}
-	});
+
+  dataY.push(g1_dictDeathPerCountry[g1_countryCompared]);
+  colors.push([themeAccentColor]);
+
 
 	var selection = g1_svg.selectAll(".new_path")
 	.data(dataY)
@@ -501,7 +500,6 @@ function g1_updateg1_graph(){
 		.y(function(d, _) { return g1_yScale(d) })
 	)
 	.attr("transform", `translate(${g1_margin.left}, 0)`);
-	//.raise();  // draw the g1_graph after other things
 }
 
 function g1_updateAxis(dataX, dataY){
@@ -509,14 +507,12 @@ function g1_updateAxis(dataX, dataY){
 		g1_xScale.domain(dataX);
 		g1_svg.selectAll("g.g1_Xaxis")
 			.call(d3.axisBottom(g1_xScale));
-		//console.log("g1_Xaxis updated with values : ", dataX);
 	}
 	if (dataY.length != 0){
 		//dataY[0] = 0;
 		g1_yScale.domain(dataY);
 		g1_svg.selectAll("g.g1_Yaxis")
 			.call(d3.axisLeft(g1_yScale));
-		//console.log("g1_Yaxis updated with values : ", dataY);
 	}
 }
 
@@ -530,7 +526,6 @@ function g1_pointermoved(event){
 	var index = parseInt((mouseX-g1_margin.left) * g1_nbDays/g1_svg_size.width);
 	var xDataValue = g1_dictDeathPerCountry["Date"][index];
 	var yDataValue = g1_dictDeathPerCountry[g1_countryHighlighted][index];
-	var yVal = g1_yScale(yDataValue) - 20;
 	var textContent = [];
 
 	policiesFilenameList.forEach(function(policy_name){
@@ -546,9 +541,13 @@ function g1_pointermoved(event){
 	});
 	textContent.push(['Deaths',yDataValue]);
 	textContent.push(g1_fomatTimetooltip(xDataValue));
-	addToLegend(textContent);
+	
 	dataX = g1_xScale(xDataValue);
-	if (dataX == undefined) dataX = g1_xScale(0);
+	if (dataX == undefined){ 
+    dataX = g1_xScale(0);
+  }else{
+    addToLegend(textContent);
+  }
 	dataY = g1_yScale.range();
 
 	var selection = g1_svg.selectAll(".new_line")
@@ -616,7 +615,7 @@ async function g1_computePolicies(){
 
 // COMPUTE DEATHS PER MILLION PER DAY FOR EACH COUNTRY SELECTED
 function g1_computeDeath(){
-	d3.csv(dataFolderPrefix+g1_data_filename).then(function(data) {
+	d3.csv(dataFolderPrefix+g1_death_filename).then(function(data) {
 		data.map(function(line){
 			europeanCountries.concat("Date").forEach(function(country){
 				value = 0;
@@ -635,34 +634,32 @@ function g1_computeDeath(){
 	return;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function g1_computeFactors(){
+  dateIsDone = false;
+  d3.csv(dataFolderPrefix+g1_factor_filename).then(function(data) {
+    data.map(function(line){
+      country = line["Entity"];
+      date = line["Day"];
+      if (new Date(date) > new Date("2020-01-21")){
+        if (europeanCountries.includes(country)){  // the country being read is in Europe
+          factorsColumnNames.forEach(function(factor){
+            value = 0;
+            if (line[factor] != ""){
+              value = parseFloat(line[factor]);
+            }
+            g1_dictFactorPerCountry[country][factor].push(value);
+          })
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if (country === "France"){
+          g1_dictFactorPerCountry["Date"].push(new Date(date));
+        }
+      }
+    });
+  });
+  return;
+}
 
 
 
@@ -680,41 +677,49 @@ function g2_update(){
 	var isDone = false;
 	var tempY;
 	var dateLevel = -1;
-	[g1_countryHighlighted].concat(g1_countriesDisplayed).forEach(function(country_name){
+
+  console.log("HERE", g2_factorSelected);
+
+	[g1_countryHighlighted].concat(g2_countryCompared).forEach(function(country_name){
 		tempY = [];
 		listIndexes = g1_dictCountriesPolicies[country_name][g2_policySelected].list_idx;
 		listDates = g1_dictCountriesPolicies[country_name][g2_policySelected].list_dates;
 		for(var j = listIndexes.length -1; j>= 0; j--){
 			if(listIndexes[j] === g2_policyLevelSelected){
-				dateLevel = listDates[j];
+				if(listDates[j] >= new Date("2020-02-17") ){
+					dateLevel = listDates[j];  // get the date corresponding to the first application of this policy at this level
+				}
 			}
 		}
+
+
 		if(dateLevel != -1){
-			idx_day1 = g1_dictDeathPerCountry["Date"].findIndex(function(elt){
+			console.log("dateLevel chosen = ", dateLevel);
+			idx_day1 = g1_dictFactorPerCountry["Date"].findIndex(function(elt){
 				return elt.getTime() === dateLevel.getTime();
 			})
-			if( (country_name === g1_countryHighlighted && !isDone) || country_name !== g1_countryHighlighted){
+			if( country_name === g1_countryHighlighted ){
 				for(var j=idx_day1; j<idx_day1+31; j++){
-					tempY.push(g1_dictDeathPerCountry[country_name][j]);
-					selectionMaxY.push(g1_dictDeathPerCountry[country_name][j]);
-					if(country_name === g1_countryHighlighted && !isDone){
-						g2_countryHighlightedDateBegin = idx_day1;
-					}
+					console.log("country_name, g2_factorSelected, j = ", country_name, g2_factorSelected, j);
+					tempY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
+					selectionMaxY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
+					g2_countryHighlightedDateBegin = idx_day1;
 				}
 				dataY.push(tempY);
 			}
 		}else{
-			alert(country_name + " does not have a level " + g2_policyLevelSelected + " for the selected policy !");
+			alert(country_name + " does not have " + g2_policySelected + " level " + g2_policyLevelSelected );
 		}
-		if(country_name === g1_countryHighlighted) isDone = true;
+		
 	});
-	var datay = [0, Math.max(...selectionMaxY)];
-	g2_updateAxis([], datay);
+	var dataAxisY = [0, Math.max(...selectionMaxY)];
+  document.getElementById("g2_title").innerHTML = "Implementation of "+governmentPolicies[selectParameter['policy']]+" level "+g2_policyLevelSelected+" policies in "+g1_countryHighlighted;
+	g2_updateAxis([], dataAxisY);
 	g2_update_graph(dataY);
 }
 
 function g2_update_graph(dataY){
-	console.log(dataY);
+
 	var selection = g2_svg.selectAll(".g2_new_path")
 	.data(dataY)
 	.join(
@@ -739,25 +744,28 @@ function g2_updateAxis(dataX, dataY){
 		g2_xScale.domain(dataX);
 		g2_svg.selectAll("g.xaxis")
 			.call(d3.axisBottom(g2_xScale));
-		console.log("g2_Xaxis updated with values : ", dataX);
 	}
 	if (dataY.length != 0){
-		//dataY[0] = 0;
 		g2_yScale.domain(dataY);
 		g2_svg.selectAll("g.yaxis")
 			.call(d3.axisLeft(g2_yScale));
-		console.log("g2_Yaxis updated with values : ", dataY);
 	}
 }
 
 function g2_pointermoved(event){
+
+	if (g2_countryHighlightedDateBegin === undefined){
+		return;  // the country cannot be displayednew_deaths_per_million
+	}
+
 	var coords = d3.pointer(event);  // coords of the mouse
 	var mouseX = coords[0];
 	var mouseY = coords[1];
 	var xVal = mouseX - g2_margin.left;
 	var index = parseInt((mouseX-g2_margin.left) * 30/g2_svg_size.width);
-	var xDataValue = g1_dictDeathPerCountry["Date"][g2_countryHighlightedDateBegin+index];
-	var yDataValue = g1_dictDeathPerCountry[g1_countryHighlighted][g2_countryHighlightedDateBegin+index];
+	console.log("g2_pointermoved", g2_countryHighlightedDateBegin + index);
+	var xDataValue = g1_dictFactorPerCountry["Date"][g2_countryHighlightedDateBegin+index];
+	var yDataValue = g1_dictFactorPerCountry[g1_countryHighlighted][g2_factorSelected][g2_countryHighlightedDateBegin+index];
 	var yVal = g2_yScale(yDataValue) - 20;
 	var textContent = [];
 
@@ -772,13 +780,12 @@ function g2_pointermoved(event){
 			.attr("stroke", "black");
 	if(yVal === yVal){  // if yVal is not NaN
 		const text = g2_tooltip.selectAll("text")
-			.data([,]) //textContent)
+			.data([,])
 			.join("text")
 			.call(text => text
 				.selectAll("tspan")
 				.data(textContent)
 				.join("tspan")
-					//.attr("x", mouseX)
 					.attr("y", (_, i) => `${yVal - i * 20}`)
 					.text(d => d));
 		g2_tooltip.raise();
@@ -790,13 +797,7 @@ function g2_pointermoved(event){
 }
 
 function g2_createPath(x, y, w, h, lim){
-	// TODO add boundaries parameter to prevent the tooltip to be too far left or too far right
-	/**
-	xmax = Math.min(x + w / 2 + 10, lim[0]);
-	xmin = Math.max(x - w / 2 - 10, lim[1]);
-	ymax = Math.min(y + 10, lim[2]);
-	ymin = Math.max(y - h / 2 - 20, lim[3]);
-	**/
+
 	xmax = x + w / 2 + 10;
 	xmin = x - w / 2 - 10;
 	ymax = y + 10;
@@ -816,24 +817,6 @@ function g2_createPath(x, y, w, h, lim){
 function g2_pointerleft(){
 	g2_tooltip.style("display", "none");
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -955,7 +938,6 @@ function g3_update(graphData) {
     	test=0;
     	if (graphData[k][0][5] != 'err' && typeof graphData[k][0][5] !== 'undefined') {
     		theDate = g3_format(graphData[k][0][5]);
-    		//console.log(graphData[k][0][5]);
     	}
     	descriptContent = descriptContent+"<tr><td>"+k+"</td><td>"+theDate+"</td><td>"+graphData[k][0][4]+"</td></tr>";
     }
@@ -1104,18 +1086,6 @@ function g3_getPolicyChangesDates(countryIndice, PolicyIndice, dataSRC) {
     }
   }
   while (listDate[listDate.length-1] == 'err' || typeof(listDate[listDate.length-1]) == 'undefined') {listDate.pop();}
-  //console.log(listDate);
   return listDate; 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-//modifications to make
-//when no data, print line in alt color (same as the zero line => like if we don't draw it)
-
-//
