@@ -327,6 +327,31 @@ function g3_selectChange(selectID){
   g3_update(g3_extractedData);
 }
 
+function g3_checkboxChange(labelID) {
+  var x = document.getElementById(labelID).innerText;
+  var src = "";
+  if (x=="Deaths per million"){
+    document.getElementById(labelID).innerText = "Cases per million";
+    src = 'data/new_cases_per_million.csv';
+  } else {
+    document.getElementById(labelID).innerText = "Deaths per million";
+    src = 'data/new_deaths_per_million.csv';
+  }
+  g3_dictData=[];
+  g3_extractedData = [];
+  for (i=0; i<europeanCountries.length; i++){
+    g3_dictData[i] = [];
+  }       
+  g3_getData(src, g3_dictData).then(function(){
+    startDate = [];
+    startDate = g3_getPolicyChangesDates(selectParameter['country'], selectParameter['policy'], g1_dictCountriesPolicies);
+    g3_extractedData = g3_extractData(startDate, g3_dictData[selectParameter['country']], themeSecondaryAccentColor, g3_extractedData);
+    g3_legend_content=[];
+    g3_legend_content.push([themeSecondaryAccentColor, europeanCountries[selectParameter['country']]]);
+    g3_update(g3_extractedData);
+  });
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //MATH FUNCTIONS 
