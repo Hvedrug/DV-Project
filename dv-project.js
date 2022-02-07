@@ -34,7 +34,7 @@ const factorsColumnNames = ["transit_stations", "workplaces", "grocery_and_pharm
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // data for the first graph
-var g1_dictDeathPerCountry = {"Date":[]};  //TODO REMOVE
+var g1_dictDeathPerCountry = {"Date":[]};
 g1_dictFactorPerCountry = {"Date":[]};
 var g1_nbDays = 0;  // number of days studied
 var g1_listMinY = {};  // list of the minimum value for each country
@@ -43,9 +43,7 @@ var g1_graphPeriod = [new Date('2020-01-01'), new Date('2021-01-01')];  // perio
 const g1_fomatTimetooltip = d3.timeFormat("%A %d %b %Y");
 var g1_countryCompared = "Italy";
 const g1_death_filename = "new_deaths_per_million.csv";
-
-// DEBUG VARIABLES (USEFUL FOR NOW)
-g1_factor_filename = "changes-visitors-covid.csv";
+var g1_factor_filename = "changes-visitors-covid.csv";
 var g1_countryHighlighted = "France";
 
 // Set the dimensions and g1_margins of the g1_graph
@@ -75,6 +73,28 @@ const g1_svg = g1_graph.append("svg")
 	.on("pointerenter pointermove", g1_pointermoved)
 	.on("pointerleave", g1_pointerleft);
 
+
+// append graph 1 legend svg
+const g1_legend = d3.select("#g1_legend")
+.append("svg")
+.attr("viewBox", "0 0 200 16")
+.append("g");
+
+g1_svg.append("text")
+    .attr("class", "x label")
+    .attr("text-anchor", "end")
+    .attr("x", g1_margin.left + g1_margin.right + g1_width/2 )
+    .attr("y", g1_height + g1_margin.top + g1_margin.bottom + 35 )
+    .text("Time (days)");
+g1_svg.append("text")
+    .attr("class", "y label")
+    .attr("text-anchor", "end")
+    .attr("x", - g1_height / 4)
+    .attr("y", 15)
+    .attr("transform", "rotate(-90)")
+    .text("Deaths per million");
+
+
 const g1_axis_bottom = g1_svg.append("g")
 	.attr("transform", `translate(${g1_margin.left}, ${g1_svg_size.height})`)
 	.attr("class", "g1_Xaxis")
@@ -93,11 +113,13 @@ const g1_tooltip = g1_svg.append("g")
 var g2_countryHighlightedDateBegin;
 var g2_graphPeriod = [0, 30];  // period of the values 
 const g2_fomatTimeTooltip = d3.timeFormat("%A %d %b %Y");
-const g2_graphColors = ["#FF6D00", "#FF6E40", "#64FFDA", "#448AFF", "#E040FB"];
+const g2_graphColors = ["#FF6D00",  "#E040FB"]; // "#FF6E40"]; //, "#64FFDA", "#448AFF", "#E040FB"];
 var g2_countryCompared = "Italy";
 var g2_policySelected =  "face-covering-policies-covid.csv";
-var g2_policyLevelSelected = 0;  // TODO
-var g2_factorSelected = factorsColumnNames[0];
+var g2_policyLevelSelected = 0;
+var g2_idxFactorSelected = 0;
+var g2_factorSelected = factorsColumnNames[g2_idxFactorSelected];
+
 
 // Set the dimensions and g2_margins of the g2_graph
 const g2_svg_size = {width:800, height:400};
@@ -125,6 +147,29 @@ const g2_svg = g2_graph.append("svg")
 	.attr("viewBox", `0 0 ${g2_svg_size.width+g2_margin.left+g2_margin.right} ${g2_svg_size.height+g2_margin.top+g2_margin.bottom}`)
 	.on("pointerenter pointermove", g2_pointermoved)
 	.on("pointerleave", g2_pointerleft);
+
+
+// append graph 2 legend svg
+const g2_legend = d3.select("#g2_legend")
+.append("svg")
+.attr("viewBox", "0 0 200 16")
+.append("g");
+
+g2_svg.append("text")
+    .attr("class", "x label")
+    .attr("text-anchor", "end")
+    .attr("x", g2_margin.left + g2_width/2 + 163 )
+    .attr("y", g2_height + g2_margin.top + g2_margin.bottom + 35 )
+    .text("Time since the beginning of the policy (days)")
+    .attr("text-align", "center");
+g2_svg.append("text")
+    .attr("class", "y label")
+    .attr("text-anchor", "end")
+    .attr("x", - g2_height / 4)
+    .attr("y", 15)
+    .attr("transform", "rotate(-90)")
+    .text("Number of person");
+
 
 g2_svg.append("g")
 	.attr("transform", `translate(${g2_margin.left}, ${g2_svg_size.height})`)
@@ -159,14 +204,14 @@ var startDate = [];
 // append the third graph g3_svg object to the body of the page
 const g3_svg = d3.select("#third-graph")
 .append("svg")
-.attr("viewBox", `0 0 `+g3_width +` `+g3_height)
+.attr("viewBox", `0 0 ${g3_width} ${g3_height}`)
 .append("g")
 .attr("transform", `translate(${g3_margin.left},${g3_margin.top})`);
 
 // append graph 3 legend svg
 const g3_legend = d3.select("#g3_legend")
 .append("svg")
-.attr("viewBox", `0 0 `+200 +` `+50)
+.attr("viewBox", "0 0 200 50")
 .append("g");
 g3_svg.append("text")
     .attr("class", "x label")
@@ -204,7 +249,7 @@ window.onload = function() {
   initSelect(covidFactors, "selectFactor", selectParameter["factor"]);
   initSelect(europeanCountries, "selectGraph1", 13);
   initSelect(europeanCountries, "selectGraph2", 13);
-  initSelect(Array.from({length: policiesMaxLevel[policiesFilenameList[selectParameter["policy"]]] }, (v, i) => i), "selectPolicyLevelGraph2", 0);
+  initSelect(Array.from({length: policiesMaxLevel[policiesFilenameList[selectParameter["policy"]]] }, (v, i) => i), "selectPolicyLevelGraph2", 1);
   initSelect(europeanCountries, "selectGraph3", 1);
 
 
@@ -213,9 +258,9 @@ window.onload = function() {
   setTimeout(()=>{g1_computeDeath()}, 0);
   setTimeout(()=>{g1_computeFactors()}, 0);
   setTimeout(()=>{g1_computeMinMax()}, 500);
-  setTimeout(()=>{g1_update()}, 1200);
-  setTimeout(()=>{g2_update()}, 1200);
-  setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1200);
+  setTimeout(()=>{g1_update()}, 1500);
+  setTimeout(()=>{g2_update()}, 1500);
+  setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1500);
   darkMode(); 
 }; 
 
@@ -275,9 +320,11 @@ function selectOnChange(selectID){
     selectParameter['policy'] = document.getElementById(selectID).value;
     g2_policySelected = policiesFilenameList[selectParameter['policy']];
     initSelect(Array.from({length: policiesMaxLevel[g2_policySelected] }, (v, i) => i), "selectPolicyLevelGraph2", 0);
+    g2_policyLevelSelected = 0;
   }if (selectID=="selectFactor"){
     selectParameter['factor'] = document.getElementById(selectID).value;
-    g2_factorSelected = factorsColumnNames[selectParameter["factor"]];
+    g2_idxFactorSelected = selectParameter["factor"];
+    g2_factorSelected = factorsColumnNames[g2_idxFactorSelected];
   }
 
   g1_update();
@@ -432,6 +479,41 @@ function g1_update(){
 	miny = - 0.1 * maxy
 	datay = [miny, maxy];
 
+  // update lengend content
+  g1_legend.selectAll(".legend_circle")
+    .data(g2_graphColors)
+    .join(
+      function(enter){ return enter.append("circle");},
+      function(update){ return update;},
+      function(exit){ return exit.remove();}
+    )
+    .attr('class', 'legend_circle')
+    .attr("cx", function(d,i) { return i*(65)+5;})
+    .attr("cy",8)
+    .attr("r", 4)
+    .style("fill", function(d) {return d;});
+ 
+  g1_legend.selectAll(".legend_text")
+    .data([g1_countryHighlighted, g1_countryCompared])
+    .join(
+      function(enter){ return enter.append("text");},
+      function(update){ return update;},
+      function(exit){ return exit.remove();}
+    )
+    .attr('class', 'legend_text')
+    .attr("x", function(d,i) { return i*(65)+10;})
+    .attr("y", 8)
+    .text(function(d) {return d})
+    .style('fill', themeAccentColor)
+    .style("font-size", "10px")
+    .attr("alignment-baseline","middle");
+
+  g1_svg.selectAll('.x.label')
+    .style('fill', themeAccentColor);
+  g1_svg.selectAll('.y.label')
+    .style('fill', themeAccentColor);
+
+
 	g1_updateAxis([], datay);
 	g1_updateg1_graph();
 	g1_updateRect(miny);
@@ -480,6 +562,7 @@ function g1_updateRect(size){
 		.range(themeAccentRangeColor);
 
 	dataX = listDates.concat(g1_graphPeriod[1]);
+  console.log("HERE, list_dates = ", listDates)
 	var selection = g1_svg.selectAll(".new_rect")
 	.data(listDates)
 	.join(
@@ -703,7 +786,6 @@ function g2_update(){
 	var tempY;
 	var dateLevel = -1;
 
-  console.log("HERE", g2_factorSelected);
 
 	[g1_countryHighlighted].concat(g2_countryCompared).forEach(function(country_name){
 		tempY = [];
@@ -719,26 +801,63 @@ function g2_update(){
 
 
 		if(dateLevel != -1){
-			console.log("dateLevel chosen = ", dateLevel);
 			idx_day1 = g1_dictFactorPerCountry["Date"].findIndex(function(elt){
 				return elt.getTime() === dateLevel.getTime();
 			})
 			if( country_name === g1_countryHighlighted ){
-				for(var j=idx_day1; j<idx_day1+31; j++){
-					console.log("country_name, g2_factorSelected, j = ", country_name, g2_factorSelected, j);
-					tempY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
-					selectionMaxY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
-					g2_countryHighlightedDateBegin = idx_day1;
-				}
-				dataY.push(tempY);
+        g2_countryHighlightedDateBegin = idx_day1;
+      }
+
+			for(var j=idx_day1; j<idx_day1+31; j++){
+				tempY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
+				selectionMaxY.push(g1_dictFactorPerCountry[country_name][g2_factorSelected][j]);
 			}
+			dataY.push(tempY);
+
 		}else{
 			alert(country_name + " does not have " + g2_policySelected + " level " + g2_policyLevelSelected );
 		}
 		
 	});
-	var dataAxisY = [0, Math.max(...selectionMaxY)];
-  document.getElementById("g2_title").innerHTML = "Implementation of "+governmentPolicies[selectParameter['policy']]+" level "+g2_policyLevelSelected+" policies in "+g1_countryHighlighted;
+	var dataAxisY = [Math.min(...selectionMaxY), Math.max(...selectionMaxY)];
+  document.getElementById("g2_title").innerHTML = "Effects of implementation of " + governmentPolicies[selectParameter['policy']] + " level " + g2_policyLevelSelected + " policy on " + covidFactors[g2_idxFactorSelected]; // HERE
+
+
+  // update lengend content
+  g2_legend.selectAll(".legend_circle")
+    .data(g2_graphColors)
+    .join(
+      function(enter){ return enter.append("circle");},
+      function(update){ return update;},
+      function(exit){ return exit.remove();}
+    )
+    .attr('class', 'legend_circle')
+    .attr("cx", function(d,i) { return i*(65)+5;})
+    .attr("cy",8)
+    .attr("r", 4)
+    .style("fill", function(d) {return d;});
+ 
+  g2_legend.selectAll(".legend_text")
+    .data([g1_countryHighlighted, g2_countryCompared])
+    .join(
+      function(enter){ return enter.append("text");},
+      function(update){ return update;},
+      function(exit){ return exit.remove();}
+    )
+    .attr('class', 'legend_text')
+    .attr("x", function(d,i) { return i*(65)+10;})
+    .attr("y", 8)
+    .text(function(d) {return d})
+    .style('fill', themeAccentColor)
+    .style("font-size", "10px")
+    .attr("alignment-baseline","middle");
+
+  g2_svg.selectAll('.x.label')
+    .style('fill', themeAccentColor);
+  g2_svg.selectAll('.y.label')
+    .style('fill', themeAccentColor);
+
+
 	g2_updateAxis([], dataAxisY);
 	g2_update_graph(dataY);
 }
@@ -780,7 +899,7 @@ function g2_updateAxis(dataX, dataY){
 function g2_pointermoved(event){
 
 	if (g2_countryHighlightedDateBegin === undefined){
-		return;  // the country cannot be displayednew_deaths_per_million
+		return;  // the country cannot be displayed
 	}
 
 	var coords = d3.pointer(event);  // coords of the mouse
@@ -788,13 +907,12 @@ function g2_pointermoved(event){
 	var mouseY = coords[1];
 	var xVal = mouseX - g2_margin.left;
 	var index = parseInt((mouseX-g2_margin.left) * 30/g2_svg_size.width);
-	console.log("g2_pointermoved", g2_countryHighlightedDateBegin + index);
 	var xDataValue = g1_dictFactorPerCountry["Date"][g2_countryHighlightedDateBegin+index];
 	var yDataValue = g1_dictFactorPerCountry[g1_countryHighlighted][g2_factorSelected][g2_countryHighlightedDateBegin+index];
 	var yVal = g2_yScale(yDataValue) - 20;
 	var textContent = [];
 
-	textContent.push(`Deaths : ${yDataValue}`);
+	textContent.push(`Value : ${yDataValue}`);
 	textContent.push(g2_fomatTimeTooltip(xDataValue));
 	g2_tooltip.style("display", null);
 
