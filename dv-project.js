@@ -15,7 +15,7 @@ const governmentPolicies = ["testing_policy","vaccination_policy","facial_coveri
 const policiesFilenameList = ["covid-19-testing-policy.csv", "covid-vaccination-policy.csv", "face-covering-policies-covid.csv", "income-support-covid.csv", "public-campaigns-covid.csv", "public-events-covid.csv", "public-transport-covid.csv", "school-closures-covid.csv", "stay-at-home-covid.csv"];
 const covidFactors = ["Number of people in public transport", "Number of people in work places", "Number of people in grocery stores", "Number of people in non essential stores", "Number of people in public spaces", "Number of people in residential areas"];
 const policiesMaxLevel = {"covid-19-testing-policy.csv" : 3, "covid-vaccination-policy.csv" : 5, "face-covering-policies-covid.csv" : 4, "income-support-covid.csv" : 2, "public-campaigns-covid.csv" : 2, "public-events-covid.csv" : 2, "public-transport-covid.csv" : 2, "school-closures-covid.csv" : 3, "stay-at-home-covid.csv" : 3};
-var selectParameter = {country: 11, policy: 2, factor: 0};
+var selectParameter = {country: 8, policy: 6, factor: 0};
 var g1_dictCountriesPolicies = {};
 const dataFolderPrefix = "data/"; 
 const dictFilenameToColumn = {
@@ -115,7 +115,7 @@ var g2_graphPeriod = [0, 30];  // period of the values
 const g2_fomatTimeTooltip = d3.timeFormat("%A %d %b %Y");
 const g2_graphColors = ["#FF6D00",  "#E040FB"]; // "#FF6E40"]; //, "#64FFDA", "#448AFF", "#E040FB"];
 var g2_countryCompared = "Italy";
-var g2_policySelected =  "face-covering-policies-covid.csv";
+var g2_policySelected =  "public-transport-covid.csv"; //policiesFilenameList[selectParameter['policy']];
 var g2_policyLevelSelected = 0;
 var g2_idxFactorSelected = 0;
 var g2_factorSelected = factorsColumnNames[g2_idxFactorSelected];
@@ -261,7 +261,7 @@ window.onload = function() {
   setTimeout(()=>{g1_update()}, 1500);
   setTimeout(()=>{g2_update()}, 1500);
   setTimeout(()=>{g3_initPage('data/new_deaths_per_million.csv')}, 1500);
-  darkMode(); 
+  darkMode();  
 }; 
 
 // function to change the page theme
@@ -315,7 +315,7 @@ function initSelect(data, selectId, value){
 function selectOnChange(selectID){
   if (selectID=="selectCountry"){
     selectParameter['country'] = document.getElementById(selectID).value;
-    g1_countryHighlighted = europeanCountries[ectParameter['country']];
+    g1_countryHighlighted = europeanCountries[selectParameter['country']];
   }if (selectID=="selectPolicy"){
     selectParameter['policy'] = document.getElementById(selectID).value;
     g2_policySelected = policiesFilenameList[selectParameter['policy']];
@@ -481,7 +481,7 @@ function g1_update(){
 
   // update lengend content
   g1_legend.selectAll(".legend_circle")
-    .data(g2_graphColors)
+    .data([themeSecondaryAccentColor, themeAccentColor])
     .join(
       function(enter){ return enter.append("circle");},
       function(update){ return update;},
@@ -562,7 +562,6 @@ function g1_updateRect(size){
 		.range(themeAccentRangeColor);
 
 	dataX = listDates.concat(g1_graphPeriod[1]);
-  console.log("HERE, list_dates = ", listDates)
 	var selection = g1_svg.selectAll(".new_rect")
 	.data(listDates)
 	.join(
