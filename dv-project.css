@@ -17,6 +17,10 @@ body {
   background-color: var(--body-bg-color);
 } 
 
+a {
+  color: var(--text-color);
+}
+
 p {
   color: var(--text-color);
 }
