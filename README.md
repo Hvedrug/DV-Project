@@ -3,4 +3,5 @@
 
 Launch project:
 
-in console : ```python -m http.server 8888&```
+open console in project folder: ```python -m http.server 8888&```
+in browser: ```http://localhost:8888/```
