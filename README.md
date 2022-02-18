@@ -1,14 +1,14 @@
 # DV-Project
 ## Jan 2022, Data Visualization project, theme: impact of gov. policies on Covid pandemic
 
-#### Launch project:
+### Launch project:
 
 open console in project folder: ```python -m http.server 8888&```
 
 in browser: ```http://localhost:8888/```
 
 
-#### Warnings
+### Warnings
 
 It is possible that the page will not load correctly on the first try. You just have to reload it until the first graph appear on screen. The issue is the time required by the programm to load all the data.
 
